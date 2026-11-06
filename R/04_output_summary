@@ -1,0 +1,56 @@
+# ==========================================
+# Project: NYS Real Estate Affordability Model
+# Script: 04_output_summary.R
+# Purpose: Task 5 - Output Design & User Reporting
+# ==========================================
+
+library(dplyr)
+library(readr)
+
+# 1. Function to generate a clean summary report by city
+generate_city_summary <- function(matched_listings_df) {
+  
+  if (nrow(matched_listings_df) == 0) {
+    message("No properties found within the specified budget. Try increasing the monthly budget or down payment.")
+    return(NULL)
+  }
+  
+  # Group matched properties by city to calculate summary metrics
+  city_summary <- matched_listings_df %>%
+    group_by(city) %>%
+    summarise(
+      available_options_count = n(),
+      avg_purchase_price      = mean(price, na.rm = TRUE),
+      min_purchase_price      = min(price, na.rm = TRUE),
+      max_purchase_price      = max(price, na.rm = TRUE),
+      avg_square_footage      = mean(square_footage, na.rm = TRUE),
+      avg_monthly_cost        = mean(total_monthly_cost, na.rm = TRUE),
+      avg_property_tax        = mean(property_tax_monthly, na.rm = TRUE),
+      avg_hoa_fee             = mean(hoa_monthly, na.rm = TRUE)
+    ) %>%
+    arrange(desc(available_options_count))
+  
+  return(city_summary)
+}
+
+# 2. Function to export final reports for Excel review (Task 5 requirement)
+export_results_for_reporting <- function(matched_df, summary_df, output_dir = "data/processed/") {
+  
+  # Ensure output directory exists
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  # Save detailed matches and city-level summary CSVs
+  write_csv(matched_df, file.path(output_dir, "user_matched_properties.csv"))
+  write_csv(summary_df, file.path(output_dir, "city_affordability_summary.csv"))
+  
+  message("Reports successfully exported to data/processed/ for Excel review.")
+}
+
+# --- Example Pipeline Execution ---
+# source("R/03_cross_reference.R")
+# user_budget_results <- find_matching_homes(housing_df, max_monthly_budget = 3500, available_down_payment = 50000)
+# final_summary <- generate_city_summary(user_budget_results)
+# print(final_summary)
+# export_results_for_reporting(user_budget_results, final_summary)
