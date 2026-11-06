@@ -1,0 +1,42 @@
+# ==========================================
+# Project: NYS Real Estate Affordability Model
+# Script: 03_cross_reference.R
+# Purpose: Task 4 - Cross-reference user budgets with regional listings
+# ==========================================
+
+library(dplyr)
+library(readr)
+
+# Load cleaned dataset
+clean_data_path <- file.path("data", "processed", "manhattan_sales_clean.csv")
+housing_df <- read_csv(clean_data_path, show_col_types = FALSE)
+
+# Function to query affordable properties based on user constraints
+find_matching_homes <- function(df, max_monthly_budget, available_down_payment, interest_rate = 0.07) {
+  
+  # Calculate monthly loan terms per property
+  monthly_rate <- interest_rate / 12
+  n_payments <- 360 # 30 years
+  
+  matched_results <- df %>%
+    mutate(
+      # Estimate loan amount needed for each property
+      loan_amount = price - available_down_payment,
+      loan_amount = ifelse(loan_amount < 0, 0, loan_amount),
+      
+      # Calculate monthly mortgage payment
+      monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate)^n_payments) / ((1 + monthly_rate)^n_payments - 1),
+      
+      # Total estimated monthly cost (Mortgage + Property Tax + HOA/Maintenance)
+      total_monthly_cost = monthly_mortgage + coalesce(property_tax_monthly, 0) + coalesce(hoa_monthly, 0)
+    ) %>%
+    # Filter for properties where total monthly expenses fit the user's limit
+    filter(total_monthly_cost <= max_monthly_budget) %>%
+    arrange(total_monthly_cost)
+  
+  return(matched_results)
+}
+
+# Example test run (simulating a user budget)
+# user_matches <- find_matching_homes(housing_df, max_monthly_budget = 3500, available_down_payment = 50000)
+# head(user_matches)
