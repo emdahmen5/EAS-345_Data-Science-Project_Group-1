@@ -1,0 +1,42 @@
+# ==========================================
+# Project: NYS Real Estate Affordability Analysis
+# Script: 01_load_data.R
+# Purpose: Task 1 (Data Acquisition) & Initial Task 2 (Quality Control)
+# ==========================================
+
+library(readr)
+library(dplyr)
+
+# 1. Define paths to raw data files
+raw_sales_path <- file.path("data", "raw", "nys_housing_sales.csv")
+
+# 2. Load raw data and verify structure
+load_raw_housing_data <- function(filepath) {
+  if (!file.exists(filepath)) {
+    stop(paste("Raw dataset not found at:", filepath, 
+               "\nPlease ensure your CSV file is placed in data/raw/"))
+  }
+  
+  # Read raw CSV export
+  df <- read_csv(filepath, show_col_types = FALSE)
+  
+  # Standardize column names to lowercase and trim extra whitespace
+  names(df) <- tolower(trimws(names(df)))
+  
+  # Verify core columns outlined in Task 1 of the project proposal
+  required_cols <- c("city", "sale_price", "beds", "baths", "square_footage", 
+                     "property_type", "monthly_maintenance", "property_tax")
+  
+  missing_cols <- setdiff(required_cols, names(df))
+  if (length(missing_cols) > 0) {
+    warning(paste("Note: The following expected columns are missing:", paste(missing_cols, collapse = ", ")))
+  }
+  
+  message(paste("Successfully loaded", nrow(df), "raw records across New York State cities."))
+  return(df)
+}
+
+# --- Execution ---
+# Uncomment below once your raw dataset is added to data/raw/
+# raw_housing_data <- load_raw_housing_data(raw_sales_path)
+# glimpse(raw_housing_data)
