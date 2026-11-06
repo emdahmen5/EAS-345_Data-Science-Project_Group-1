@@ -1,0 +1,9 @@
+# Data files (never commit large raw CSVs)
+data/raw/
+data/processed/
+
+# R specific files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
