@@ -1,0 +1,47 @@
+# ==========================================
+# Project: NYS Real Estate Affordability Model
+# Script: 02_affordability_model.R
+# Purpose: Task 3 (Financial Math) & Task 4 (Cross-referencing)
+# ==========================================
+
+library(dplyr)
+
+# 1. Define Financial Constants (per proposal specifications)
+calculate_purchasing_power <- function(max_monthly_budget, estimated_taxes_and_hoa, down_payment, interest_rate = 0.07, loan_years = 30) {
+  
+  # Step A: Subtract non-mortgage fees first (Task 3 requirement)
+  available_for_mortgage <- max_monthly_budget - estimated_taxes_and_hoa
+  
+  if (available_for_mortgage <= 0) {
+    return(0) # Budget too low for taxes/fees
+  }
+  
+  # Step B: Calculate maximum loan principal using 30-year fixed mortgage formula
+  monthly_rate <- interest_rate / 12
+  n_payments <- loan_years * 12
+  
+  # Mortgage Amortization backward solve for Principal (PV)
+  max_loan_principal <- available_for_mortgage * ((1 - (1 + monthly_rate)^(-n_payments)) / monthly_rate)
+  
+  # Step C: Add available down payment to determine total purchasing power
+  total_purchasing_power <- max_loan_principal + down_payment
+  
+  return(total_purchasing_power)
+}
+
+# 2. Cross-Reference User Budget Against Regional City Data (Task 4)
+filter_affordable_listings <- function(listings_df, user_budget, user_down_payment) {
+  
+  # Filter properties where total estimated monthly costs fit within user limits
+  affordable_matches <- listings_df %>%
+    rowwise() %>%
+    mutate(
+      # Assume estimated monthly expenses = monthly mortgage + monthly tax + monthly HOA
+      # (Using placeholder columns matching your cleaning pipeline)
+      total_monthly_cost = (price - down_payment) * (0.07/12) / (1 - (1 + 0.07/12)^(-360)) + property_tax_monthly + hoa_monthly
+    ) %>%
+    ungroup() %>%
+    filter(total_monthly_cost <= user_budget)
+  
+  return(affordable_matches)
+}
